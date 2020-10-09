@@ -3,7 +3,7 @@ const app = express();
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const mongoose = require("mongoose");
-const PORT = 4000;
+const PORT = 4001;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -26,10 +26,7 @@ mongoose.set("useCreateIndex", true);
 mongoose.set("useUnifiedTopology", true);
 
 // Routes
-app.use("/composite", require("./routes/composite"));
 app.use("/compute", require("./routes/compute"));
-app.use("/paillier", require("./routes/paillier"));
-app.use("/rsa", require("./routes/rsa"));
 
 // Server port set-up
 app.listen(PORT, function () {

@@ -1,8 +1,5 @@
 import React, { Component, Fragment } from "react";
 import Axios from "axios";
-const axiosTime = require("axios-time");
-
-axiosTime(Axios);
 
 export default class LandingPage extends Component {
   constructor() {
@@ -22,18 +19,12 @@ export default class LandingPage extends Component {
       c1: "",
       c2: "",
       c12_r: "",
-      cs1: "",
-      cs2: "",
-      cs12_r: "",
       ct1: "",
       n1: "",
       ct1_r: "",
       ct2: "",
       n2: "",
       ct2_r: "",
-      cm1: "",
-      cm2: "",
-      cm_r: "",
     };
     this.handleChange = this.handleChange.bind(this);
     this.generateKeys = this.generateKeys.bind(this);
@@ -41,10 +32,8 @@ export default class LandingPage extends Component {
     this.decryptRSA = this.decryptRSA.bind(this);
     this.decryptPaillier = this.decryptPaillier.bind(this);
     this.cipherAddition = this.cipherAddition.bind(this);
-    this.cipherSubtraction = this.cipherSubtraction.bind(this);
     this.constAddition = this.constAddition.bind(this);
     this.constMultiplication = this.constMultiplication.bind(this);
-    this.cipherMultiplication = this.cipherMultiplication.bind(this);
   }
 
   generateKeys() {
@@ -60,9 +49,6 @@ export default class LandingPage extends Component {
       .catch((err) => {
         console.log("Key gen errror: ", err);
       });
-    // this.setState({
-    //   resp1: response.timings.elapsedTime,
-    // });
   }
 
   encrypt() {
@@ -115,8 +101,8 @@ export default class LandingPage extends Component {
   }
 
   cipherAddition() {
-    Axios.post("/compute/add_ciphers", {
-      pub: this.state.publicKey1,
+    Axios.post("/paillier/add_ciphers", {
+      pub: this.state.publicKey,
       x: this.state.c1,
       y: this.state.c2,
     })
@@ -130,25 +116,9 @@ export default class LandingPage extends Component {
       });
   }
 
-  cipherSubtraction() {
-    Axios.post("/compute/subtract_ciphers", {
-      pub: this.state.publicKey1,
-      x: this.state.cs1,
-      y: this.state.cs2,
-    })
-      .then((res) => {
-        this.setState({
-          cs12_r: res.data.soln,
-        });
-      })
-      .catch((err) => {
-        console.log("subtract ciphers error: ", err);
-      });
-  }
-
   constAddition() {
-    Axios.post("/compute/add_constant", {
-      pub: this.state.publicKey1,
+    Axios.post("/paillier/add_constant", {
+      pub: this.state.publicKey,
       x: this.state.ct1,
       const: this.state.n1,
     })
@@ -163,8 +133,8 @@ export default class LandingPage extends Component {
   }
 
   constMultiplication() {
-    Axios.post("/compute/mult_const", {
-      pub: this.state.publicKey1,
+    Axios.post("/paillier/mult_const", {
+      pub: this.state.publicKey,
       x: this.state.ct2,
       const: this.state.n2,
     })
@@ -178,22 +148,6 @@ export default class LandingPage extends Component {
       });
   }
 
-  cipherMultiplication() {
-    Axios.post("/compute/mult_cipher", {
-      pub: this.state.publicKey2,
-      x: this.state.cm1,
-      y: this.state.cm2,
-    })
-      .then((res) => {
-        this.setState({
-          cm_r: res.data.soln,
-        });
-      })
-      .catch((err) => {
-        console.log("mult. ciphers error: ", err);
-      });
-  }
-
   handleChange(event) {
     this.setState({ [event.target.name]: event.target.value });
   }
@@ -204,7 +158,7 @@ export default class LandingPage extends Component {
         <div className="container b1">
           <div className="card bg-info" style={{ border: "none" }}>
             <div className="card-body text-center">
-              <h1 className="text-light">Client Side Application</h1>
+              <h1 className="text-light">Cloud Server</h1>
             </div>
           </div>
           <br />
@@ -216,8 +170,6 @@ export default class LandingPage extends Component {
               <small className="text-center">-BTP project eval demo-</small>
             </div>
             <div className="card-body">
-              <h4>Local Functions :</h4>
-              <br />
               <ul className="list-group list-group-flush">
                 {/* Keygen */}
                 <li className="list-group-item">
@@ -248,10 +200,6 @@ export default class LandingPage extends Component {
                         RSA Private Key: {this.state.privateKey2}
                       </li>
                     </ul>
-                    <br />
-                    {/* <span className="text-info">
-                      Time Elapsed : {this.state.resp1}
-                    </span> */}
                   </div>
                 </li>
                 {/* encryption */}
@@ -371,9 +319,7 @@ export default class LandingPage extends Component {
               <br />
               <br />
               <br />
-              <h4>Cloud Functions :</h4>
-              <br />
-              <h5> 1. Paillier Cipher properties</h5>
+              <h4>Homomorphic properties</h4>
               <br />
               <ul className="list-group list-group-flush">
                 {/* Addition 1 */}
@@ -421,51 +367,6 @@ export default class LandingPage extends Component {
                     </div>
                   </div>
                 </li>
-                {/* Subtraction */}
-                {/* <li className="list-group-item">
-                  <h5 className="btitle">1.Subtraction of Two cipher texts</h5>
-                  <div className="bbody">
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">Cipher #1</label>
-                      <div className="col-8">
-                        <input
-                          type="text"
-                          class="form-control"
-                          name="cs1"
-                          onChange={this.handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">Cipher #2</label>
-                      <div className="col-8">
-                        <input
-                          type="text"
-                          class="form-control"
-                          name="cs2"
-                          onChange={this.handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">&nbsp;</label>
-                      <div className="col-8">
-                        <button
-                          className="btn btn-dark btn-sharp"
-                          onClick={this.cipherSubtraction}
-                        >
-                          Compute
-                        </button>
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">
-                        Resultant Cipher-text
-                      </label>
-                      <div className="col-8">{this.state.cs12_r}</div>
-                    </div>
-                  </div>
-                </li> */}
                 {/* Addition 2 */}
                 <li className="list-group-item">
                   <h5 className="btitle">
@@ -561,55 +462,6 @@ export default class LandingPage extends Component {
                         Resultant Cipher-text
                       </label>
                       <div className="col-8">{this.state.ct2_r}</div>
-                    </div>
-                  </div>
-                </li>
-              </ul>
-              <br />
-              <h5>2. RSA Cipher Property</h5>
-              <br />
-              <ul className="list-group list-group-flush">
-                <li className="list-group-item">
-                  <h5 className="btitle">Multiplication of two Ciphers</h5>
-                  <div className="bbody">
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">Cipher #1</label>
-                      <div className="col-8">
-                        <input
-                          type="text"
-                          class="form-control"
-                          name="cm1"
-                          onChange={this.handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">Cipher #2</label>
-                      <div className="col-8">
-                        <input
-                          type="text"
-                          class="form-control"
-                          name="cm2"
-                          onChange={this.handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">&nbsp;</label>
-                      <div className="col-8">
-                        <button
-                          className="btn btn-dark btn-sharp"
-                          onClick={this.cipherMultiplication}
-                        >
-                          Compute
-                        </button>
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">
-                        Resultant Cipher-text
-                      </label>
-                      <div className="col-8">{this.state.cm_r}</div>
                     </div>
                   </div>
                 </li>

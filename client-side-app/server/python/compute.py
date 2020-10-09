@@ -29,16 +29,23 @@ class PublicKey(object):
 
 
 if __name__ == "__main__":
-    pub = PublicKey(int(sys.argv[2]))
-    if(sys.argv[1] == "1"):
-        # Adds one encrypted integer to another
-        a, b = int(sys.argv[3]), int(sys.argv[4])
-        print(a * b % pub.n_sq)
-    elif(sys.argv[1] == "2"):
-        # Adds constant to an encrypted integer
-        a, n = int(sys.argv[3]), int(sys.argv[4])
-        print(a * modpow(pub.g, n, pub.n_sq) % pub.n_sq)
+    if(sys.argv[1] == "5"):
+        print(int(sys.argv[3])*int(sys.argv[4]))
     else:
-        # Multiplies an encrypted integer by a constant
-        a, n = int(sys.argv[3]), int(sys.argv[4])
-        print(modpow(a, n, pub.n_sq))
+        pub = PublicKey(int(sys.argv[2]))
+        if(sys.argv[1] == "1"):
+            # Adds one encrypted integer to another
+            a, b = int(sys.argv[3]), int(sys.argv[4])
+            print(a * b % pub.n_sq)
+        elif(sys.argv[1] == "4"):
+            # subtracts second integer from first
+            a, b = int(sys.argv[3]), int(sys.argv[4])
+            print((a * (b**(-1))) % pub.n_sq)
+        elif(sys.argv[1] == "2"):
+            # Adds constant to an encrypted integer
+            a, n = int(sys.argv[3]), int(sys.argv[4])
+            print(a * modpow(pub.g, n, pub.n_sq) % pub.n_sq)
+        elif(sys.argv[1] == "3"):
+            # Multiplies an encrypted integer by a constant
+            a, n = int(sys.argv[3]), int(sys.argv[4])
+            print(modpow(a, n, pub.n_sq))
