@@ -26,6 +26,7 @@ mongoose.set("useCreateIndex", true);
 mongoose.set("useUnifiedTopology", true);
 
 // Routes
+// app.use("/output",require("./output/routes"))
 app.use("/composite", require("./routes/composite"));
 app.use("/compute", require("./routes/compute"));
 app.use("/paillier", require("./routes/paillier"));

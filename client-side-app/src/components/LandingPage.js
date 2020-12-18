@@ -8,43 +8,29 @@ export default class LandingPage extends Component {
   constructor() {
     super();
     this.state = {
-      publicKey1: "",
+      publicKey1: "", // paillier
       privateKey1: "",
-      publicKey2: "",
+      publicKey2: "", // RSA
       privateKey2: "",
-      enc: "",
-      enc_r1: "",
-      enc_r2: "",
-      dec1: "",
-      dec2: "",
-      dec_r1: "",
-      dec_r2: "",
-      c1: "",
-      c2: "",
-      c12_r: "",
-      cs1: "",
-      cs2: "",
-      cs12_r: "",
-      ct1: "",
-      n1: "",
-      ct1_r: "",
-      ct2: "",
-      n2: "",
-      ct2_r: "",
-      cm1: "",
-      cm2: "",
-      cm_r: "",
+      num1:"",
+      num2:"",
+      ciphers:[["",""],["",""]],
+      output_log : [],
+      ciph1: "",
+      ciph2: "",
+      dec1:"",
+      dec2:"",
+      isEncrypted: false,      
     };
     this.handleChange = this.handleChange.bind(this);
     this.generateKeys = this.generateKeys.bind(this);
+    this.Addition = this.Addition.bind(this);
+    this.Multiplication = this.Multiplication.bind(this);
     this.encrypt = this.encrypt.bind(this);
+    this.cipherAddition = this.cipherAddition.bind(this);    
+    this.cipherMultiplication = this.cipherMultiplication.bind(this);    
     this.decryptRSA = this.decryptRSA.bind(this);
     this.decryptPaillier = this.decryptPaillier.bind(this);
-    this.cipherAddition = this.cipherAddition.bind(this);
-    this.cipherSubtraction = this.cipherSubtraction.bind(this);
-    this.constAddition = this.constAddition.bind(this);
-    this.constMultiplication = this.constMultiplication.bind(this);
-    this.cipherMultiplication = this.cipherMultiplication.bind(this);
   }
 
   generateKeys() {
@@ -58,27 +44,123 @@ export default class LandingPage extends Component {
         });
       })
       .catch((err) => {
-        console.log("Key gen errror: ", err);
+        console.log("Key gen error: ", err);
       });
     // this.setState({
     //   resp1: response.timings.elapsedTime,
     // });
   }
 
-  encrypt() {
+
+  Addition() {
+    if(this.state.isEncrypted){
+      this.cipherAddition()
+    }
+    else{
+      this.encrypt(this.state.num1, 0, () => {
+        this.encrypt(this.state.num2, 1, () => {
+          this.setState({
+            isEncrypted:true
+          })
+          this.cipherAddition()
+        })
+      })  
+    }
+  }
+
+  Multiplication() {
+    if(this.state.isEncrypted){
+      this.cipherMultiplication()
+    }
+    else{
+      this.encrypt(this.state.num1, 0, () => {
+        this.encrypt(this.state.num2, 1, () => {
+          this.setState({
+            isEncrypted:true
+          })
+          this.cipherMultiplication()
+        })
+      })  
+    }
+  }
+
+  encrypt(pln_text, index, _callback) {
     Axios.post("/composite/encrypt", {
       pub1: this.state.publicKey1,
       pub2: this.state.publicKey2,
-      x: this.state.enc,
+      x: pln_text,
     })
       .then((res) => {
+        var c = this.state.ciphers
+        var today = new Date()
+        var time = "[" + today.getHours() + ':' + today.getMinutes() + ':' + today.getSeconds() + "] "
+        c[index] = [res.data.cipher1, res.data.cipher2]
         this.setState({
-          enc_r1: res.data.cipher1,
-          enc_r2: res.data.cipher2,
+          output_log: [...this.state.output_log, time+pln_text+" encrypted to the ciphers: [Paillier: "+res.data.cipher1+", RSA: "+res.data.cipher2+"]"],
+          ciphers: c
+        });
+        // return true
+        _callback()
+      })
+      .catch((err) => {
+        console.log("Encrpytion error: ", err);
+        this.setState({
+          output_log: [...this.state.output_log, "Encryption error: "+err],
+        });
+        // return false
+      });
+  }
+
+  cipherAddition() {
+    var today = new Date()
+    var time = "[" + today.getHours() + ':' + today.getMinutes() + ':' + today.getSeconds() + "] "
+    this.setState({
+      output_log: [...this.state.output_log, time+"Ciphers sent for addition"],
+    });
+    Axios.post("/compute/add_ciphers", {
+      pub: this.state.publicKey1,
+      x: this.state.ciphers[0][0],
+      y: this.state.ciphers[1][0],
+    })
+      .then((res) => {
+        var today = new Date()
+        var time = "[" + today.getHours() + ':' + today.getMinutes() + ':' + today.getSeconds() + "] "
+        this.setState({
+          output_log: [...this.state.output_log, time+"Recieved Response: "+res.data.soln],
+          // c12_r: res.data.soln,
         });
       })
       .catch((err) => {
-        console.log("encrpytion error: ", err);
+        console.log("add ciphers error: ", err);
+        this.setState({
+          output_log: [...this.state.output_log, "Cipher Addition Error: "+err],
+        });
+      });
+  }
+
+  cipherMultiplication() {
+    var today = new Date()
+    var time = "[" + today.getHours() + ':' + today.getMinutes() + ':' + today.getSeconds() + "] "
+    this.setState({
+      output_log: [...this.state.output_log, time+"Ciphers sent for Multiplication "],
+    });
+    Axios.post("/compute/mult_cipher", {
+      pub: this.state.publicKey2,
+      x: this.state.ciphers[0][1],
+      y: this.state.ciphers[1][1],
+    })
+      .then((res) => {
+        var today = new Date()
+        var time = "[" + today.getHours() + ':' + today.getMinutes() + ':' + today.getSeconds() + "] "
+        this.setState({
+          output_log: [...this.state.output_log, time+"Recieved Response: "+res.data.soln],
+        });
+      })
+      .catch((err) => {
+        console.log("mult. ciphers error: ", err);
+        this.setState({
+          output_log: [...this.state.output_log, "Cipher Multiplication Error: "+err],
+        });        
       });
   }
 
@@ -86,11 +168,11 @@ export default class LandingPage extends Component {
     Axios.post("/paillier/decrypt", {
       priv: this.state.privateKey1,
       pub: this.state.publicKey1,
-      x: this.state.dec1,
+      x: this.state.ciph1,
     })
       .then((res) => {
         this.setState({
-          dec_r1: res.data.pln_txt,
+          dec1: res.data.pln_txt,
         });
       })
       .catch((err) => {
@@ -102,95 +184,15 @@ export default class LandingPage extends Component {
     Axios.post("/rsa/decrypt", {
       priv: this.state.privateKey2,
       pub: this.state.publicKey2,
-      x: this.state.dec2,
+      x: this.state.ciph2,
     })
       .then((res) => {
         this.setState({
-          dec_r2: res.data.pln_txt,
+          dec2: res.data.pln_txt,
         });
       })
       .catch((err) => {
         console.log("decryption error: ", err);
-      });
-  }
-
-  cipherAddition() {
-    Axios.post("/compute/add_ciphers", {
-      pub: this.state.publicKey1,
-      x: this.state.c1,
-      y: this.state.c2,
-    })
-      .then((res) => {
-        this.setState({
-          c12_r: res.data.soln,
-        });
-      })
-      .catch((err) => {
-        console.log("add ciphers error: ", err);
-      });
-  }
-
-  cipherSubtraction() {
-    Axios.post("/compute/subtract_ciphers", {
-      pub: this.state.publicKey1,
-      x: this.state.cs1,
-      y: this.state.cs2,
-    })
-      .then((res) => {
-        this.setState({
-          cs12_r: res.data.soln,
-        });
-      })
-      .catch((err) => {
-        console.log("subtract ciphers error: ", err);
-      });
-  }
-
-  constAddition() {
-    Axios.post("/compute/add_constant", {
-      pub: this.state.publicKey1,
-      x: this.state.ct1,
-      const: this.state.n1,
-    })
-      .then((res) => {
-        this.setState({
-          ct1_r: res.data.soln,
-        });
-      })
-      .catch((err) => {
-        console.log("add cnst error: ", err);
-      });
-  }
-
-  constMultiplication() {
-    Axios.post("/compute/mult_const", {
-      pub: this.state.publicKey1,
-      x: this.state.ct2,
-      const: this.state.n2,
-    })
-      .then((res) => {
-        this.setState({
-          ct2_r: res.data.soln,
-        });
-      })
-      .catch((err) => {
-        console.log("multp. conts error: ", err);
-      });
-  }
-
-  cipherMultiplication() {
-    Axios.post("/compute/mult_cipher", {
-      pub: this.state.publicKey2,
-      x: this.state.cm1,
-      y: this.state.cm2,
-    })
-      .then((res) => {
-        this.setState({
-          cm_r: res.data.soln,
-        });
-      })
-      .catch((err) => {
-        console.log("mult. ciphers error: ", err);
       });
   }
 
@@ -199,6 +201,7 @@ export default class LandingPage extends Component {
   }
 
   render() {
+    const Op_log = this.state.output_log.map((log) =>  <li className="list-group-item">{log}</li>);
     return (
       <Fragment>
         <div className="container b1">
@@ -211,17 +214,17 @@ export default class LandingPage extends Component {
           <div className="card">
             <div className="card-title text-center">
               <h3 className="text-center">
-                Hybrid Homomorphic Encryption Scheme
+                Composite Homomorphic Encryption Scheme
               </h3>
               <small className="text-center">-BTP project eval demo-</small>
             </div>
             <div className="card-body">
-              <h4>Local Functions :</h4>
+              <h4>1. Key Generation :</h4>
               <br />
               <ul className="list-group list-group-flush">
                 {/* Keygen */}
                 <li className="list-group-item">
-                  <h5 className="btitle">1.Key Generation</h5>
+                  {/* <h5 className="btitle">1.Key Generation</h5> */}
                   <div className="bbody">
                     <button
                       className="btn btn-info btn-sharp"
@@ -254,65 +257,75 @@ export default class LandingPage extends Component {
                     </span> */}
                   </div>
                 </li>
-                {/* encryption */}
+              </ul>
+              <br />
+              <h4>2. Computations :</h4>
+              <br />
+              <ul className="list-group list-group-flush">
+                {/* Addition 1 */}
                 <li className="list-group-item">
-                  <h5 className="btitle">2.Encryption</h5>
                   <div className="bbody">
                     <div className="form-group row">
-                      <label className="col-4 col-form-label">
-                        Enter Integer to be encrypted
-                      </label>
+                      <label className="col-4 col-form-label">Number #1</label>
                       <div className="col-8">
                         <input
                           type="text"
                           class="form-control"
-                          name="enc"
+                          name="num1"
+                          onChange={this.handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="form-group row">
+                      <label className="col-4 col-form-label">Number #2</label>
+                      <div className="col-8">
+                        <input
+                          type="text"
+                          class="form-control"
+                          name="num2"
                           onChange={this.handleChange}
                         />
                       </div>
                     </div>
                     <div className="form-group row">
                       <label className="col-4 col-form-label">&nbsp;</label>
-                      <div className="col-8">
+                      <div className="col-1">
                         <button
-                          className="btn btn-outline-dark btn-sharp"
-                          onClick={this.encrypt}
+                          className="btn btn-dark btn-sharp"
+                          onClick={this.Addition}
                         >
-                          Encrypt
+                          Add
                         </button>
                       </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">
-                        Encrypted Cipher texts
-                      </label>
-                      <div className="col-8">
-                        <ul className="list-group">
-                          <li className="list-group-item">
-                            Paillier cipher : {this.state.enc_r1}
-                          </li>
-                          <li className="list-group-item">
-                            RSA cipher : {this.state.enc_r2}
-                          </li>
-                        </ul>
+                      <div className="col-2">
+                        <button
+                          className="btn btn-dark btn-sharp"
+                          onClick={this.Multiplication}
+                        >
+                          Multiply
+                        </button>
                       </div>
                     </div>
                   </div>
                 </li>
-                {/* decryption */}
+              </ul>
+              <br/>
+              <ul className="list-group list-group-flush">
+                {Op_log}
+              </ul>
+              <br />
+              <h4>3. Decryption :</h4>
+              <br />
+              <ul className="list-group list-group-flush">
                 <li className="list-group-item">
-                  <h5 className="btitle">3.Decryption</h5>
-                  {/* Paillier decryption */}
                   <div className="bbody">
                     <div className="form-group row">
-                      <label className="col-4 col-form-label">
-                        Paillier Cipher
-                      </label>
+                      <label className="col-4 col-form-label">Paillier Cipher</label>
                       <div className="col-8">
                         <input
                           type="text"
                           class="form-control"
-                          name="dec1"
+                          name="ciph1"
                           onChange={this.handleChange}
                         />
                       </div>
@@ -321,7 +334,7 @@ export default class LandingPage extends Component {
                       <label className="col-4 col-form-label">&nbsp;</label>
                       <div className="col-8">
                         <button
-                          className="btn btn-outline-dark btn-sharp"
+                          className="btn btn-dark btn-sharp"
                           onClick={this.decryptPaillier}
                         >
                           Decrypt
@@ -329,13 +342,14 @@ export default class LandingPage extends Component {
                       </div>
                     </div>
                     <div className="form-group row">
-                      <label className="col-4 col-form-label">
-                        Decrypted Plain text
-                      </label>
-                      <div className="col-8">{this.state.dec_r1}</div>
+                      <label className="col-4 col-form-label">&nbsp;</label>
+                      <div className="col-8">
+                        {this.state.dec1}
+                      </div>
                     </div>
                   </div>
-                  {/* RSA decryption */}
+                </li>                
+                <li className="list-group-item">
                   <div className="bbody">
                     <div className="form-group row">
                       <label className="col-4 col-form-label">RSA Cipher</label>
@@ -343,7 +357,7 @@ export default class LandingPage extends Component {
                         <input
                           type="text"
                           class="form-control"
-                          name="dec2"
+                          name="ciph2"
                           onChange={this.handleChange}
                         />
                       </div>
@@ -352,7 +366,7 @@ export default class LandingPage extends Component {
                       <label className="col-4 col-form-label">&nbsp;</label>
                       <div className="col-8">
                         <button
-                          className="btn btn-outline-dark btn-sharp"
+                          className="btn btn-dark btn-sharp"
                           onClick={this.decryptRSA}
                         >
                           Decrypt
@@ -360,259 +374,13 @@ export default class LandingPage extends Component {
                       </div>
                     </div>
                     <div className="form-group row">
-                      <label className="col-4 col-form-label">
-                        Decrypted Plain text
-                      </label>
-                      <div className="col-8">{this.state.dec_r2}</div>
-                    </div>
-                  </div>
-                </li>
-              </ul>
-              <br />
-              <br />
-              <br />
-              <h4>Cloud Functions :</h4>
-              <br />
-              <h5> 1. Paillier Cipher properties</h5>
-              <br />
-              <ul className="list-group list-group-flush">
-                {/* Addition 1 */}
-                <li className="list-group-item">
-                  <h5 className="btitle">1.Addition of Two cipher texts</h5>
-                  <div className="bbody">
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">Cipher #1</label>
-                      <div className="col-8">
-                        <input
-                          type="text"
-                          class="form-control"
-                          name="c1"
-                          onChange={this.handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">Cipher #2</label>
-                      <div className="col-8">
-                        <input
-                          type="text"
-                          class="form-control"
-                          name="c2"
-                          onChange={this.handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group row">
                       <label className="col-4 col-form-label">&nbsp;</label>
                       <div className="col-8">
-                        <button
-                          className="btn btn-dark btn-sharp"
-                          onClick={this.cipherAddition}
-                        >
-                          Compute
-                        </button>
+                        {this.state.dec2}
                       </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">
-                        Resultant Cipher-text
-                      </label>
-                      <div className="col-8">{this.state.c12_r}</div>
                     </div>
                   </div>
-                </li>
-                {/* Subtraction */}
-                {/* <li className="list-group-item">
-                  <h5 className="btitle">1.Subtraction of Two cipher texts</h5>
-                  <div className="bbody">
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">Cipher #1</label>
-                      <div className="col-8">
-                        <input
-                          type="text"
-                          class="form-control"
-                          name="cs1"
-                          onChange={this.handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">Cipher #2</label>
-                      <div className="col-8">
-                        <input
-                          type="text"
-                          class="form-control"
-                          name="cs2"
-                          onChange={this.handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">&nbsp;</label>
-                      <div className="col-8">
-                        <button
-                          className="btn btn-dark btn-sharp"
-                          onClick={this.cipherSubtraction}
-                        >
-                          Compute
-                        </button>
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">
-                        Resultant Cipher-text
-                      </label>
-                      <div className="col-8">{this.state.cs12_r}</div>
-                    </div>
-                  </div>
-                </li> */}
-                {/* Addition 2 */}
-                <li className="list-group-item">
-                  <h5 className="btitle">
-                    2.Addition of a cipher text with a constant
-                  </h5>
-                  <div className="bbody">
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">
-                        Cipher-text
-                      </label>
-                      <div className="col-8">
-                        <input
-                          type="text"
-                          class="form-control"
-                          name="ct1"
-                          onChange={this.handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">Integer</label>
-                      <div className="col-8">
-                        <input
-                          type="text"
-                          class="form-control"
-                          name="n1"
-                          onChange={this.handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">&nbsp;</label>
-                      <div className="col-8">
-                        <button
-                          className="btn btn-dark btn-sharp"
-                          onClick={this.constAddition}
-                        >
-                          Compute
-                        </button>
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">
-                        Resultant Cipher-text
-                      </label>
-                      <div className="col-8">{this.state.ct1_r}</div>
-                    </div>
-                  </div>
-                </li>
-                {/* Multiplication */}
-                <li className="list-group-item">
-                  <h5 className="btitle">
-                    3.Multiplication of a cipher text with a constant
-                  </h5>
-                  <div className="bbody">
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">
-                        Cipher-text
-                      </label>
-                      <div className="col-8">
-                        <input
-                          type="text"
-                          class="form-control"
-                          name="ct2"
-                          onChange={this.handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">Integer</label>
-                      <div className="col-8">
-                        <input
-                          type="text"
-                          class="form-control"
-                          name="n2"
-                          onChange={this.handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">&nbsp;</label>
-                      <div className="col-8">
-                        <button
-                          className="btn btn-dark btn-sharp"
-                          onClick={this.constMultiplication}
-                        >
-                          Compute
-                        </button>
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">
-                        Resultant Cipher-text
-                      </label>
-                      <div className="col-8">{this.state.ct2_r}</div>
-                    </div>
-                  </div>
-                </li>
-              </ul>
-              <br />
-              <h5>2. RSA Cipher Property</h5>
-              <br />
-              <ul className="list-group list-group-flush">
-                <li className="list-group-item">
-                  <h5 className="btitle">Multiplication of two Ciphers</h5>
-                  <div className="bbody">
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">Cipher #1</label>
-                      <div className="col-8">
-                        <input
-                          type="text"
-                          class="form-control"
-                          name="cm1"
-                          onChange={this.handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">Cipher #2</label>
-                      <div className="col-8">
-                        <input
-                          type="text"
-                          class="form-control"
-                          name="cm2"
-                          onChange={this.handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">&nbsp;</label>
-                      <div className="col-8">
-                        <button
-                          className="btn btn-dark btn-sharp"
-                          onClick={this.cipherMultiplication}
-                        >
-                          Compute
-                        </button>
-                      </div>
-                    </div>
-                    <div className="form-group row">
-                      <label className="col-4 col-form-label">
-                        Resultant Cipher-text
-                      </label>
-                      <div className="col-8">{this.state.cm_r}</div>
-                    </div>
-                  </div>
-                </li>
+                </li>                
               </ul>
             </div>
           </div>
