@@ -5,7 +5,7 @@ const { spawn } = require("child_process");
 const fs = require('fs')
 var ejs = require('ejs');
 
-var compute_history = ["Node server successfully running on port 4000", "this is the next msg","hallo"]
+var compute_history = ["Node server successfully running on port 4000"]
 
 // adding two ciphers
 router.post("/add_ciphers", cipher_add);
